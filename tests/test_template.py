@@ -2,7 +2,7 @@
 Day 1 — LLM API Foundation
 Test suite for student solutions and master keys.
 
-Run from the 02-lab/ folder:
+Run from the repository root:
     pytest tests/ -v
 
 All external API calls are mocked — no real API keys or internet connection required.
@@ -146,7 +146,7 @@ class TestCompareModels(unittest.TestCase):
     def test_compare_models_evaluates_correct_costs(self):
         with patch.object(_m, "call_openai") as mock_openai, \
              patch.object(_m, "call_gemini") as mock_gemini:
-             
+
             # Setup mock returns
             mock_openai.side_effect = [
                 ("GPT-4o Response", 0.5, {"input_tokens": 10, "output_tokens": 20}),       # 1st call: gpt-4o
@@ -168,10 +168,10 @@ class TestCompareModels(unittest.TestCase):
             # Verify exact cost calculations
             # gpt-4o: (10 * 5.0 + 20 * 20.0) / 1,000,000 = 0.00045
             self.assertAlmostEqual(result["gpt4o"]["cost"], 0.00045, places=8)
-            
+
             # gpt-4o-mini: (10 * 0.150 + 20 * 0.600) / 1,000,000 = 0.0000135
             self.assertAlmostEqual(result["gpt4o_mini"]["cost"], 0.0000135, places=8)
-            
+
             # gemini-2.5-flash: (10 * 0.075 + 20 * 0.300) / 1,000,000 = 0.00000675
             self.assertAlmostEqual(result["gemini_flash"]["cost"], 0.00000675, places=8)
 
@@ -207,7 +207,7 @@ class TestBatchCompareAndFormat(unittest.TestCase):
 
     def test_batch_runs_and_formats_table(self):
         with patch.object(_m, "compare_models") as mock_comp:
-            def _get_mock():
+            def _get_mock(prompt):
                 return {
                     "gpt4o": {"response": "GPT-4o response content here", "latency": 0.5, "cost": 0.00045, "input_tokens": 10, "output_tokens": 20},
                     "gpt4o_mini": {"response": "GPT-4o-Mini response content here", "latency": 0.3, "cost": 0.0000135, "input_tokens": 10, "output_tokens": 20},
@@ -216,6 +216,9 @@ class TestBatchCompareAndFormat(unittest.TestCase):
             mock_comp.side_effect = _get_mock
 
             results = batch_compare(["Q1", "Q2"])
+            mock_comp.assert_any_call("Q1")
+            mock_comp.assert_any_call("Q2")
+            self.assertEqual(mock_comp.call_count, 2)
             self.assertEqual(len(results), 2)
             self.assertEqual(results[0]["prompt"], "Q1")
 

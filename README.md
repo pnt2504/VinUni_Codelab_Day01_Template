@@ -1,5 +1,28 @@
 # Student Guide: Nền tảng LLM API (Step-by-Step Walkthrough)
 
+## Bài giải đã hoàn thành
+
+Bài giải nằm ở [`solution-code/solution.py`](solution-code/solution.py), là đường dẫn bộ chấm ưu tiên. [`starter-code/template.py`](starter-code/template.py) cũng đã được điền đầy đủ. Cả hai giữ nguyên chữ ký hàm của đề bài.
+
+- Task 1–3: gọi OpenAI, Gemini và Anthropic, trả về văn bản, thời gian gọi API và số token.
+- Task 4: so sánh GPT-4o, GPT-4o Mini và Gemini Flash, tính chi phí theo `PRICING_1M_TOKENS` của đề bài.
+- Task 5: chatbot Gemini streaming, lưu 3 lượt hội thoại hoàn chỉnh gần nhất; `quit`, `exit`, EOF hoặc Ctrl+C ở ô nhập để thoát.
+- Bonus A–C: retry với exponential backoff, so sánh nhiều prompt và xuất bảng Markdown.
+
+Chạy từ thư mục gốc repo, sau khi tạo và kích hoạt `.venv` theo hướng dẫn bên dưới:
+
+```bash
+python -m pip install -r requirements.txt
+python -m pytest tests/ -v
+python solution-code/solution.py
+```
+
+Các bài kiểm tra giả lập toàn bộ API, không cần key và không gọi dịch vụ thật. Chạy script trực tiếp sẽ gọi API thật: sao chép `.env.example` thành `.env`, điền `OPENAI_API_KEY` và `GEMINI_API_KEY`. Chỉ cần thêm `ANTHROPIC_API_KEY` khi gọi `call_anthropic`. Script tự đọc `.env` ở thư mục gốc; khi import các hàm vào ứng dụng khác, hãy thiết lập biến môi trường hoặc gọi `load_dotenv()` trước.
+
+Giá và model mặc định được giữ theo đề bài để tương thích bộ chấm; chi phí tính ra là ước lượng của bài lab, không phải báo giá hiện hành hoặc hóa đơn thực tế (ví dụ chưa tính token suy luận của Gemini). Khi chạy thật, truyền `model=` phù hợp với model mà tài khoản của bạn còn truy cập được.
+
+Tài liệu SDK đã đối chiếu: [OpenAI Chat Completions](https://developers.openai.com/api/reference/python/resources/chat/subresources/completions/methods/create), [Google Gen AI Python](https://googleapis.github.io/python-genai/), [Anthropic Messages](https://platform.claude.com/docs/en/api/python/messages/create). Bài giải dùng `google-genai`, không cần SDK `google-generativeai` cũ.
+
 > [!NOTE]
 > Tài liệu này được thiết kế để hỗ trợ bạn hoàn thành bài Lab 01 một cách nhanh chóng nhất. Hãy sử dụng nó làm cẩm nang khi triển khai các hàm trong `template.py`.
 
@@ -30,7 +53,7 @@
      source .venv/bin/activate
      ```
 
-3. **Cài đặt thư viện từ [requirements.txt](file:///j:/VinUniCodelab/VinUni_Codelab_Day01/requirements.txt):**
+3. **Cài đặt thư viện từ [requirements.txt](requirements.txt):**
    ```bash
    pip install -r requirements.txt
    ```
@@ -80,7 +103,7 @@ Bạn có thể thiết lập biến môi trường trực tiếp từ terminal 
   ```
 
 > [!TIP]
-> Để tránh việc phải nhập lại lệnh thiết lập mỗi khi tắt terminal, bạn có thể tạo một file [.env](file:///j:/VinUniCodelab/VinUni_Codelab_Day01/.env) đặt ở thư mục gốc của project (sử dụng mẫu từ [.env.example](file:///j:/VinUniCodelab/VinUni_Codelab_Day01/.env.example)) và sử dụng thư viện `python-dotenv` để load tự động trong code.
+> Để tránh việc phải nhập lại lệnh thiết lập mỗi khi tắt terminal, bạn có thể tạo một file `.env` đặt ở thư mục gốc của project (sử dụng mẫu từ [.env.example](.env.example)). Script bài giải đã dùng `python-dotenv` để load tự động khi chạy trực tiếp.
 
 ---
 
@@ -104,7 +127,7 @@ Bạn có thể thiết lập biến môi trường trực tiếp từ terminal 
 * **SDK cần dùng:** `from openai import OpenAI`
 * **Cách khởi tạo:** `client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))`
 * **Hàm gọi:** `client.chat.completions.create(...)`
-* **Tham số:** 
+* **Tham số:**
   * `model`: chuỗi tên model (`gpt-4o` hoặc `gpt-4o-mini`).
   * `messages`: dạng danh sách hội thoại `[{"role": "user", "content": prompt}]`.
   * `temperature`, `top_p`, `max_tokens`.
@@ -114,7 +137,7 @@ Bạn có thể thiết lập biến môi trường trực tiếp từ terminal 
   # call API
   latency = time.time() - start
   ```
-* **Lấy Token Usage:** 
+* **Lấy Token Usage:**
   ```python
   input_tokens = response.usage.prompt_tokens
   output_tokens = response.usage.completion_tokens
@@ -159,7 +182,7 @@ Streaming giúp tạo trải nghiệm người dùng mượt mà giống như Ch
   for chunk in response_stream:
       print(chunk.text, end="", flush=True)
   ```
-* **Lịch sử hội thoại (History Management):** 
+* **Lịch sử hội thoại (History Management):**
   Giới hạn lịch sử ở 3 lượt hội thoại gần nhất (tương đương 6 tin nhắn).
   ```python
   # Cắt lịch sử nếu quá dài
